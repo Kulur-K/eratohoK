@@ -38,12 +38,11 @@ CALL COM_ORDER_COMMON
 SIF RESULT == 0
 	RETURN 0
 
-;成否の判定は武闘と適性のみで行う
+;成否の判定は武闘か防衛とその適性で行う
 ;LOCAL:1,3は成功率、LOCAL:2,4が大成功率
 ;１人でも溺れると失敗、２人とも上手く泳げると大成功
-LOCAL:5 = ABL:(MPLY:0):武闘 + (GROWTYPE_RATE(MPLY:0, "武闘") - 100) / 4
-LOCAL:6 = ABL:(MTAR:0):武闘 + (GROWTYPE_RATE(MTAR:0, "武闘") - 100) / 4
-
+LOCAL:5 = MAX(ABL:(MPLY:0):武闘 + (GROWTYPE_RATE(MPLY:0, "武闘") - 100) / 4, ABL:(MPLY:0):防衛 + (GROWTYPE_RATE(MPLY:0, "防衛") - 120) / 4)
+LOCAL:6 = MAX(ABL:(MTAR:0):武闘 + (GROWTYPE_RATE(MTAR:0, "武闘") - 100) / 4, ABL:(MTAR:0):防衛 + (GROWTYPE_RATE(MTAR:0, "防衛") - 120) / 4)
 SELECTCASE LOCAL:5
 CASE IS < 30
 	LOCAL:1 = LOCAL:5 * 5 / 3
@@ -62,11 +61,14 @@ CASEELSE
 	LOCAL:2 = 60
 ENDSELECT
 
-IF MPLY:0 == NAME_TO_CHARA("わかさぎ姫")
+IF MPLY:0 == NAME_TO_CHARA("諏訪子") || NAME_TO_CHARA("わかさぎ姫") || HAS_TAG(MPLY:0, タグ_河童)
 	LOCAL:1 += 30
 	LOCAL:2 += 30
 ENDIF
 
+;酔っ払って泳いではいけません
+LOCAL:1 /= MAX(GET_PALAMLV(PALAM:(MPLY:0):酔い) - (TALENT:(MPLY:0):酒豪 * 2), 1)
+LOCAL:2 /= MAX(GET_PALAMLV(PALAM:(MPLY:0):酔い) - (TALENT:(MPLY:0):酒豪 * 2), 1)
 
 SELECTCASE LOCAL:6
 CASE IS < 30
@@ -86,10 +88,17 @@ CASEELSE
 	LOCAL:4 = 60
 ENDSELECT
 
-IF MTAR:0 == NAME_TO_CHARA("わかさぎ姫")
+IF MTAR:0 == NAME_TO_CHARA("諏訪子") || NAME_TO_CHARA("わかさぎ姫") || HAS_TAG(MTAR:0, タグ_河童)
 	LOCAL:3 += 30
 	LOCAL:4 += 30
 ENDIF
+
+;PRINTFORMW LOCAL:3:{LOCAL:3} LOCAL:4:{LOCAL:4} yoiLV:{GET_PALAMLV(PALAM:(MTAR:0):酔い)}
+
+LOCAL:3 /= MAX(GET_PALAMLV(PALAM:(MTAR:0):酔い) - (TALENT:(MTAR:0):酒豪 * 2), 1)
+LOCAL:4 /= MAX(GET_PALAMLV(PALAM:(MTAR:0):酔い) - (TALENT:(MTAR:0):酒豪 * 2), 1)
+
+;PRINTFORMW LOCAL:3:{LOCAL:3} LOCAL:4:{LOCAL:4}
 
 SIF LOCAL:1 <= RAND:100
 	TFLAG:17 += 1
@@ -122,7 +131,12 @@ IF TALENT:(MPLY:0):恥じらい
 	TIMES SOURCE:(MPLY:0):歓楽, 0.90
 ENDIF
 
-EXP:(MPLY:0):武闘経験値 += (ABL:(MPLY:0):武闘 < 30 ? 2 # 1) + TFLAG:18
+
+IF ABL:(MPLY:0):武闘 <= ABL:(MPLY:0):防衛
+	EXP:(MPLY:0):武闘経験値 += (ABL:(MPLY:0):武闘 < 30 ? 2 # 1) + TFLAG:18
+ELSE
+	EXP:(MPLY:0):防衛経験値 += (ABL:(MPLY:0):防衛 < 30 ? 2 # 1) + TFLAG:18
+ENDIF
 
 ;主導権に応じたソースの追加
 CALL ADD_SOURCE_INITIATIVE_N(MPLY:0, 100, 100)
@@ -145,7 +159,11 @@ IF TALENT:(MTAR:0):恥じらい
 	TIMES SOURCE:(MTAR:0):歓楽, 0.90
 ENDIF
 
-EXP:(MTAR:0):武闘経験値 += (ABL:(MTAR:0):武闘 < 30 ? 2 # 1) + TFLAG:18
+IF ABL:(MTAR:0):武闘 <= ABL:(MTAR:0):防衛
+	EXP:(MTAR:0):武闘経験値 += (ABL:(MTAR:0):武闘 < 30 ? 2 # 1) + TFLAG:18
+ELSE
+	EXP:(MTAR:0):防衛経験値 += (ABL:(MTAR:0):防衛 < 30 ? 2 # 1) + TFLAG:18
+ENDIF
 
 ;同性
 IF IS_SAMESEX(MPLY:0, MTAR:0)
