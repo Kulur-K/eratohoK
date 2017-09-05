@@ -1221,6 +1221,9 @@ FOR LOCAL:0, 0, BATTLE_COMMANDER_NUM:敗北側
 	;固定キャラ死なない設定なら固定キャラはしなない
 	SIF CONFIG:309 == 1 && IS_FIXED_CHARA(LOCAL:4)
 		CONTINUE
+	;固定キャラと男性以外の非固定キャラ死なない設定なら固定キャラと男性以外の非固定キャラ死なない
+	SIF CONFIG:309 == 2 && IS_FIXED_CHARA(LOCAL:4)
+		CONTINUE
 	IF LOCAL:4 == MASTER
 		SETCOLOR カラー_警告
 		PRINTFORML %ANAME(LOCAL:4)%は戦死しました…
